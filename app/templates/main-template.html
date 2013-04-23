@@ -1,0 +1,40 @@
+<h1>Betting calculations app</h1>
+<select id="selectbox">
+	<option value="select-menu">select from menu </option>
+	<option value="2-3">2 from 3</option>
+	<option value="2-4">2 from 4</option>
+	<option value="3-4">3 from 4</option>
+	<option value="2-5">2 from 5</option>
+	<option value="3-5">3 from 5</option>
+	<option value="4-5">4 from 5</option>
+	<option value="2-6">2 from 6</option>
+	<option value="3-6">3 from 6</option>
+	<option value="4-6">4 from 6</option>
+	<option value="5-6">5 from 6</option>
+	<option value="2-7">2 from 7</option>
+	<option value="3-7">3 from 7</option>
+	<option value="4-7">4 from 7</option>
+	<option value="5-7">5 from 7</option>
+	<option value="6-7">6 from 7</option>
+	<option value="2-8">2 from 8</option>
+	<option value="3-8">3 from 8</option>
+	<option value="4-8">4 from 8</option>
+	<option value="5-8">5 from 8</option>
+	<option value="6-8">6 from 8</option>
+	<option value="7-8">7 from 8</option>
+	<option value="2-9">2 from 9</option>
+	<option value="3-9">3 from 9</option>
+	<option value="4-9">4 from 9</option>
+	<option value="5-9">5 from 9</option>
+	<option value="6-9">6 from 9</option>
+	<option value="7-9">7 from 9</option>
+	<option value="8-9">8 from 9</option>
+</select>
+<label for="totalStake">Total stake</label>
+<input type="text" class="input-small -totalStake" id="totalStake" value="10"/>
+<label for="stakeForColumn">Stake for column</label>
+<input type="text" class="input-small -totalStake" id="stakeForColumn" disabled="disabled" value="{{conf.stakeForColumn}}"  />
+<label for="numberOfColumns">Number of columns</label>
+<input type="text" class="input-small -numberOfColumns" id="numberOfColumns" disabled="disabled" value="{{conf.numberOfColumns}}" />
+<input type="button" class="btn -calculate" value="Calculate" />
+<input type="button" class="btn -clear" value="Clear" />
