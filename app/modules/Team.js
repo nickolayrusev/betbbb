@@ -76,20 +76,33 @@ function(app) {
 				"conf":this.model.toJSON()
 			}
 		},
-		onModelChange : function(model){
+		onModelChange : function(model,e){
 			console.log("on model change",model);
 			this.model.save();
 		},
-		removeChildViews : function(){
+		removeAllChildViews : function(){
 			this.getView(function(view){
 				view.model.destroy();
 				view.remove();
 			});
 		},
+		removeChildViews : function(views){
+			this.getView(function(view){
+				for(var i=0;i<views.length;i++){
+					if(views[i]==view.model.get("count")){
+						console.log("removing voew",view, "with model", view.model);
+						view.model.destroy();
+						view.remove();
+					}
+				}
+			});
+		},
 		onChangeTotalStake : function(e){
-			var value = e.target.value;
+			var value = e.target.value,stakeForColumn;
 			var numberOfColumns=this.$el.find("#numberOfColumns").val();
-			this.$el.find("#stakeForColumn").val(value/numberOfColumns);
+			stakeForColumn = value/numberOfColumns;
+			this.$el.find("#stakeForColumn").val(stakeForColumn);
+			this.model.set({"totalStake":value,"stakeForColumn":stakeForColumn});
 		},
 		onBtnCalculateClick:function(){
 			console.log(this);
@@ -111,7 +124,9 @@ function(app) {
 		},
 		
 		onbuttonclear : function(e) {
-			this.removeChildViews();
+			this.removeAllChildViews();
+			this.model.set(this.model.defaults);
+			this.render();
 		},
 		allEventsFromCollection : function(e,m){
 			//console.log("collection event:",e," model:",m);
@@ -123,7 +138,8 @@ function(app) {
 		},
 		changed : function(e) {
 			//n=3,r=2
-			this.removeChildViews();
+			//this.removeChildViews();
+			console.log("app view",this);
 			if(e.target.value=="select-menu"){
 				return ;
 			}
@@ -132,12 +148,34 @@ function(app) {
 			this.$el.find("#numberOfColumns").val(numberOfColumns);
 			var totalStake = this.$el.find("#totalStake").val();
 			this.$el.find("#stakeForColumn").val(totalStake/numberOfColumns);
-			this.model.set({"n":n,"r":r,"stakeForColumn":totalStake/numberOfColumns,"numberOfColumns":numberOfColumns});
-			for (var c = 1; c <= n; c++) {
-				var itemModel = new Team.Model({count:c});
-				this.collection.add(itemModel);
-				itemModel.save();
+			if(n < this.model.get("n")){
+				console.log("smaller");
+				//remove n views and models
+				console.log("needs to deletes n views",this.model.get("n") - n);
+				var viewsToRemove = [];
+				for(var i=parseInt(n);i<this.model.get("n");i++){
+					viewsToRemove.push(i+1);
+				} 
+				console.log("views to remove",viewsToRemove);
+				this.removeChildViews(viewsToRemove);
+			}else{
+				//add more views and models
+				console.log("bigger","collection length",this.collection.size());
+				if(this.collection.size()==0){
+						for (var c = 0; c < n; c++) {
+							var itemModel = new Team.Model({count:c+1});
+							this.collection.add(itemModel);
+							itemModel.save();
+					}	
+				}else{
+					for (var c = parseInt( this.model.get("n") ); c < n; c++) {
+						var itemModel = new Team.Model({count:c+1});
+						this.collection.add(itemModel);
+						itemModel.save();
+					}
+				}
 			}
+			this.model.set({"n":n,"r":r,"stakeForColumn":totalStake/numberOfColumns,"numberOfColumns":numberOfColumns,"totalStake":totalStake});
 		}
 	});
 	Team.Views.Result = Backbone.View.extend({
@@ -183,6 +221,7 @@ function(app) {
 			var allTeams = Team.PremierShipTeams();
 			allTeams = allTeams.concat(Team.ChampionShipTeams());
 			allTeams = allTeams.concat(Team.PrimeraDivisionTeams());
+			allTeams = allTeams.concat(Team.SeriaATeams());
 			this.$el.find("input[type=text]").typeahead({
 				source : allTeams
 			});
@@ -201,7 +240,10 @@ function(app) {
 		return ["Cardiff City","Watford","Hull City","Crystal Palace","Leicester City","Brighton & Hove Albion","Nottingham Forest","Middlesbrough","Bolton Wanderers","Leeds United","Burnley","Derby County","Blackburn Rovers","Charlton Athletic","Millwall","Huddersfield Town","Blackpool","Birmingham City","Ipswich Town","Sheffield Wednesday","Wolverhampton Wanderers","Barnsley","Peterborough United","Bristol City"];
 	},
 	Team.PrimeraDivisionTeams = function(){
-		return ["Barcelona","Real Madrid","Atl?tico Madrid","Real Sociedad","M?laga","Valencia","Real Betis","Getafe","Rayo Vallecano","Sevilla","Espanyol","Levante","Real Valladolid","Athletic Club","Osasuna","Deportivo La Coru?a","Granada","Real Zaragoza","Mallorca","Celta de Vigo"];
+		return ["Barcelona","Real Madrid","Atlético Madrid","Real Sociedad","Valencia","Málaga","Real Betis","Rayo Vallecano","Getafe","Espanyol","Sevilla","Levante","Real Valladolid","Athletic Club","Osasuna","Deportivo La Coruña","Granada","Mallorca","Celta de Vigo","Real Zaragoza"];
+	},
+	Team.SeriaATeams = function(){
+		return ["Juventus","Napoli","Milan","Fiorentina","Internazionale","Roma","Udinese","Lazio","Catania","Cagliari","Bologna","Parma","Chievo","Sampdoria","Atalanta","Torino","Siena","Palermo","Genoa","Pescara"];
 	},
 	Team.Factoriel = function(num) {
 		var rval = 1;
