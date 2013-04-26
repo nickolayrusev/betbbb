@@ -7,14 +7,14 @@ require.config({
 
   paths: {
     // Use the underscore build of Lo-Dash to minimize incompatibilities.
-    "lodash": "../vendor/jam/lodash/lodash.underscore.min",
+    "lodash": "../vendor/jam/lodash/dist/lodash.underscore",
 
     // Put additional paths here.
     // JavaScript folders.
     "plugins" : "../vendor/js/plugins",
     "vendor": "../vendor",
-    "handlebars": "../vendor/handlebars/handlebars",
-    "bootstrap":"../vendor/bootstrap/js/bootstrap",
+    "handlebars": "../vendor/jam/handlebars/handlebars",
+    "bootstrap":"../vendor/jam/bootstrap-amd/main",
     "localstorage":"../vendor/js/libs/backbone.localStorage"
   },
 

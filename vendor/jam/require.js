@@ -2012,6 +2012,15 @@ var jam = {
             "main": "backbone.layoutmanager.js"
         },
         {
+            "name": "bootstrap-amd",
+            "location": "../vendor/jam/bootstrap-amd"
+        },
+        {
+            "name": "handlebars",
+            "location": "../vendor/jam/handlebars",
+            "main": "handlebars.js"
+        },
+        {
             "name": "jquery",
             "location": "../vendor/jam/jquery",
             "main": "dist/jquery.js"
@@ -2027,7 +2036,7 @@ var jam = {
             "main": "underscore.js"
         }
     ],
-    "version": "0.2.15",
+    "version": "0.2.17",
     "shim": {
         "backbone": {
             "deps": [
@@ -2036,13 +2045,8 @@ var jam = {
             ],
             "exports": "Backbone"
         },
-        "backbone.layoutmanager": {
-            "deps": [
-                "jquery",
-                "backbone",
-                "underscore"
-            ],
-            "exports": "Backbone.Layout"
+        "handlebars": {
+            "exports": "Handlebars"
         },
         "underscore": {
             "exports": "_"
@@ -2064,6 +2068,15 @@ if (typeof require !== "undefined" && require.config) {
             "main": "backbone.layoutmanager.js"
         },
         {
+            "name": "bootstrap-amd",
+            "location": "../vendor/jam/bootstrap-amd"
+        },
+        {
+            "name": "handlebars",
+            "location": "../vendor/jam/handlebars",
+            "main": "handlebars.js"
+        },
+        {
             "name": "jquery",
             "location": "../vendor/jam/jquery",
             "main": "dist/jquery.js"
@@ -2087,13 +2100,8 @@ if (typeof require !== "undefined" && require.config) {
             ],
             "exports": "Backbone"
         },
-        "backbone.layoutmanager": {
-            "deps": [
-                "jquery",
-                "backbone",
-                "underscore"
-            ],
-            "exports": "Backbone.Layout"
+        "handlebars": {
+            "exports": "Handlebars"
         },
         "underscore": {
             "exports": "_"
@@ -2115,6 +2123,15 @@ else {
             "main": "backbone.layoutmanager.js"
         },
         {
+            "name": "bootstrap-amd",
+            "location": "../vendor/jam/bootstrap-amd"
+        },
+        {
+            "name": "handlebars",
+            "location": "../vendor/jam/handlebars",
+            "main": "handlebars.js"
+        },
+        {
             "name": "jquery",
             "location": "../vendor/jam/jquery",
             "main": "dist/jquery.js"
@@ -2138,13 +2155,8 @@ else {
             ],
             "exports": "Backbone"
         },
-        "backbone.layoutmanager": {
-            "deps": [
-                "jquery",
-                "backbone",
-                "underscore"
-            ],
-            "exports": "Backbone.Layout"
+        "handlebars": {
+            "exports": "Handlebars"
         },
         "underscore": {
             "exports": "_"

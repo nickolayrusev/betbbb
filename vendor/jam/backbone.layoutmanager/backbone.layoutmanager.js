@@ -1,20 +1,33 @@
 /*!
- * backbone.layoutmanager.js v0.8.7
+ * backbone.layoutmanager.js v0.9.0-pre
  * Copyright 2013, Tim Branyen (@tbranyen)
  * backbone.layoutmanager.js may be freely distributed under the MIT license.
  */
-(function(window) {
-
+(function(window) { 
 "use strict";
+
+// Save a separate reference to the globally accessible Backbone.  This way 
+// a separate export can be performed on it.
+var globalBackbone = window.Backbone;
+
+// Create a valid definition exports function.
+var define = window.define ? window.define : function(cb) { cb.call(this); };
+
+// Define the module contents.
+define(function(require) {
+
+// Shim in a require function if one does not exist, the shim should just fail
+// immediately so that the global object is used instead.
+require = require || function() { return false; };
 
 // Hoisted, referenced at the bottom of the source.  This caches a list of all
 // LayoutManager options at definition time.
 var keys;
 
 // Localize global dependency references.
-var Backbone = window.Backbone;
-var _ = window._;
-var $ = Backbone.$;
+var Backbone = require("backbone") || window.Backbone;
+var _ = require("underscore") || window._;
+var $ = require("jquery") || Backbone.$;
 
 // Used for issuing warnings and debugging.
 var warn = window.console && window.console.warn;
@@ -43,6 +56,34 @@ var LayoutManager = Backbone.View.extend({
 
     // Have Backbone set up the rest of this View.
     Backbone.View.call(this, options);
+  },
+
+  // This method is used within specific methods to indicate that they should
+  // be treated as asynchronous.  This method should only be used within the
+  // render chain, otherwise unexpected behavior may occur.
+  async: function() {
+    var manager = this.__manager__;
+
+    // Set this View's action to be asynchronous.
+    manager.isAsync = true;
+
+    // Return the callback.
+    return manager.callback;
+  },
+
+  promise: function() {
+    return this.__manager__.renderDeferred.promise();
+  },
+
+  renderViews: function() {
+    var manager = this.__manager__;
+    var options = this.getAllOptions();
+
+    manager.renderDeferred = options.when(this.getViews().map(function(view) {
+      return view.render().__manager__.renderDeferred;
+    })).promise();
+
+    return this;
   },
 
   // Shorthand to `setView` function with the `insert` flag set.
@@ -177,6 +218,9 @@ var LayoutManager = Backbone.View.extend({
         root.trigger.apply(root, arguments);
       }
     }, view);
+
+    // Call the `setup` method, since we now have a relationship created.
+    _.result(view, "setup");
 
     // Code path is less complex for Views that are not being inserted.  Simply
     // remove existing Views and bail out with the assignment.
@@ -343,16 +387,16 @@ var LayoutManager = Backbone.View.extend({
             // representing the result of the final rendering.
             return _.reduce(view.slice(1), function(prevRender, view) {
               return prevRender.then(function() {
-                return view.render();
+                return view.render().__manager__.renderDeferred;
               });
             // The first view should be rendered immediately, and the resulting
             // promise used to initialize the reduction.
-            }, view[0].render());
+            }, view[0].render().__manager__.renderDeferred);
           }
 
           // Only return the fetch deferred, resolve the main deferred after
           // the element has been attached to it's parent.
-          return !insert ? view.render() : view;
+          return !insert ? view.render().__manager__.renderDeferred : view;
         });
 
         // Once all nested Views have been rendered, resolve this View's
@@ -373,13 +417,14 @@ var LayoutManager = Backbone.View.extend({
       actuallyRender(root, def);
     }
 
-    // Add the View to the deferred so that `view.render().view.el` is
-    // possible.
-    def.view = root;
-
-    // This is the promise that determines if the `render` function has
-    // completed or not.
-    return def;
+    // Put the deferred inside of the `__manager__` object, since we don't want
+    // end users accessing this directly anymore in favor of the `afterRender`
+    // event.  So instead of doing `render().then(...` do
+    // `render().once("afterRender", ...`.
+    root.__manager__.renderDeferred = def;
+    
+    // Return the actual View for chainability purposes.
+    return root;
   },
 
   // Ensure the cleanup function is called whenever remove is called.
@@ -402,23 +447,10 @@ var LayoutManager = Backbone.View.extend({
   _cache: {},
 
   // Creates a deferred and returns a function to call when finished.
-  _makeAsync: function(options, done) {
-    var handler = options.deferred();
-
-    // Used to handle asynchronous renders.
-    handler.async = function() {
-      handler._isAsync = true;
-
-      return done;
-    };
-
-    return handler;
-  },
-
   // This gets passed to all _render methods.  The `root` value here is passed
   // from the `manage(this).render()` line in the `_render` function
   _viewRender: function(root, options) {
-    var url, contents, fetchAsync, renderedEl;
+    var url, contents, def, renderedEl;
     var manager = root.__manager__;
 
     // This function is responsible for pairing the rendered template into
@@ -450,7 +482,7 @@ var LayoutManager = Backbone.View.extend({
       }
 
       // Resolve only after fetch and render have succeeded.
-      fetchAsync.resolveWith(root, [root]);
+      def.resolveWith(root, [root]);
     }
 
     // Once the template is successfully fetched, use its contents to proceed.
@@ -459,21 +491,26 @@ var LayoutManager = Backbone.View.extend({
     function done(context, contents) {
       // Store the rendered template someplace so it can be re-assignable.
       var rendered;
-      // This allows the `render` method to be asynchronous as well as `fetch`.
-      var renderAsync = LayoutManager._makeAsync(options, function(rendered) {
+
+      // Trigger this once the render method has completed.
+      manager.callback = function(rendered) {
+        // Clean up asynchronous manager properties.
+        delete manager.isAsync;
+        delete manager.callback;
+
         applyTemplate(rendered);
-      });
+      };
 
       // Ensure the cache is up-to-date.
       LayoutManager.cache(url, contents);
 
       // Render the View into the el property.
       if (contents) {
-        rendered = options.render.call(renderAsync, contents, context);
+        rendered = options.render.call(root, contents, context);
       }
 
       // If the function was synchronous, continue execution.
-      if (!renderAsync._isAsync) {
+      if (!manager.isAsync) {
         applyTemplate(rendered);
       }
     }
@@ -486,15 +523,23 @@ var LayoutManager = Backbone.View.extend({
         var context = root.serialize || options.serialize;
         var template = root.template || options.template;
 
+        // Create a deferred specifically for fetching.
+        def = options.deferred();
+
         // If data is a function, immediately call it.
         if (_.isFunction(context)) {
           context = context.call(root);
         }
 
-        // This allows for `var done = this.async()` and then `done(contents)`.
-        fetchAsync = LayoutManager._makeAsync(options, function(contents) {
+        // Set the internal callback to trigger once the asynchronous or
+        // synchronous behavior has completed.
+        manager.callback = function(contents) {
+          // Clean up asynchronous manager properties.
+          delete manager.isAsync;
+          delete manager.callback;
+
           done(context, contents);
-        });
+        };
 
         // Set the url to the prefix + the view's template property.
         if (typeof template === "string") {
@@ -506,26 +551,26 @@ var LayoutManager = Backbone.View.extend({
         if (contents = LayoutManager.cache(url)) {
           done(context, contents, url);
 
-          return fetchAsync;
+          return def;
         }
 
         // Fetch layout and template contents.
         if (typeof template === "string") {
-          contents = options.fetch.call(fetchAsync, options.prefix + template);
+          contents = options.fetch.call(root, options.prefix + template);
         // If the template is already a function, simply call it.
         } else if (typeof template === "function") {
           contents = template;
         // If its not a string and not undefined, pass the value to `fetch`.
         } else if (template != null) {
-          contents = options.fetch.call(fetchAsync, template);
+          contents = options.fetch.call(root, template);
         }
 
         // If the function was synchronous, continue execution.
-        if (!fetchAsync._isAsync) {
+        if (!manager.isAsync) {
           done(context, contents);
         }
 
-        return fetchAsync;
+        return def;
       }
     };
   },
@@ -724,22 +769,41 @@ var LayoutManager = Backbone.View.extend({
         var manager = view.__manager__;
         // Cache these properties.
         var beforeRender = options.beforeRender;
+        // Create a deferred instead of going off 
+        var def = options.deferred();
 
         // Ensure all nested Views are properly scrubbed if re-rendering.
         if (manager.hasRendered) {
-          this._removeViews();
+          view._removeViews();
         }
+
+        // This continues the render flow after `beforeRender` has completed.
+        manager.callback = function() {
+          // Clean up asynchronous manager properties.
+          delete manager.isAsync;
+          delete manager.callback;
+
+          // Always emit a beforeRender event.
+          view.trigger("beforeRender", view);
+
+          // Render!
+          manage(view, options).render().then(function() {
+            // Complete this deferred once resolved.
+            def.resolve();
+          });
+        };
 
         // If a beforeRender function is defined, call it.
         if (beforeRender) {
-          beforeRender.call(this, this);
+          beforeRender.call(view, view);
         }
 
-        // Always emit a beforeRender event.
-        this.trigger("beforeRender", this);
+        if (!manager.isAsync) {
+          manager.callback();
+        }
 
-        // Render!
-        return manage(this, options).render();
+        // Return this intermediary promise.
+        return def.promise();
       };
 
       // Ensure the render is always set correctly.
@@ -779,10 +843,16 @@ var LayoutManager = Backbone.View.extend({
   }
 });
 
-// Convenience assignment to make creating Layout's slightly shorter.
-Backbone.Layout = LayoutManager;
 // Tack on the version.
-LayoutManager.VERSION = "0.8.7";
+LayoutManager.VERSION = "0.9.0-pre";
+
+// Expose LayoutManager.
+Backbone.Layout = LayoutManager;
+
+// Expose to the global Backbone as well, if it exists.
+if (globalBackbone) {
+  globalBackbone.Layout = LayoutManager;
+}
 
 // Override _configure to provide extra functionality that is necessary in
 // order for the render function reference to be bound during initialize.
@@ -880,5 +950,10 @@ LayoutManager.prototype.options = {
 
 // Maintain a list of the keys at define time.
 keys = _.keys(LayoutManager.prototype.options);
+
+// Assign `LayoutManager` object for AMD loaders.
+return LayoutManager;
+
+});
 
 })(typeof global === "object" ? global : this);

@@ -55,7 +55,7 @@ module.exports = function(grunt) {
         prefix: "app/styles/",
 
         // Additional production-only stylesheets here.
-        additional: []
+        additional: ["vendor/bootstrap/css/bootstrap.css"]
       }
     },
 
@@ -191,48 +191,67 @@ module.exports = function(grunt) {
     // If you want to generate targeted `index.html` builds into the `dist/`
     // folders, uncomment the following configuration block and use the
     // conditionals inside `index.html`.
-    //targethtml: {
-    //  debug: {
-    //    src: "index.html",
-    //    dest: "dist/debug/index.html"
-    //  },
+    targethtml: {
+      debug: {
+        src: "index.html",
+        dest: "dist/debug/index.html"
+      },
+    
+      release: {
+        src: "index.html",
+        dest: "dist/release/index.html"
+      }
+    },
+    // The handlebars task compiles all application templates into JavaScript
+    // functions using Handlebars templating engine.
     //
-    //  release: {
-    //    src: "index.html",
-    //    dest: "dist/release/index.html"
-    //  }
-    //},
+    // Since this task defaults to writing to the same file as the jst task,
+    // edit the debug task replacing jst with handlebars.
+    //
+    // The concat task depends on this file to exist, so if you decide to
+    // remove this, ensure concat is updated accordingly.
+   handlebars: {
+      "dist/debug/templates.js": ["app/templates/**/*.html"]
+    },
     
     // This task will copy assets into your build directory,
     // automatically.  This makes an entirely encapsulated build into
     // each directory.
-    //copy: {
-    //  debug: {
-    //    files: {
-    //      "dist/debug/app/": "app/**",
-    //      "dist/debug/vendor/": "vendor/**"
-    //    }
-    //  },
+    copy: {
+      debug: {
+        files: {
+          "dist/debug/app/": "app/**",
+          "dist/debug/vendor/": "vendor/**"
+        }
+      },
 
-    //  release: {
-    //    files: {
-    //      "dist/release/app/": "app/**",
-    //      "dist/release/vendor/": "vendor/**"
-    //    }
-    //  }
-    //}
+      release: {
+        files: {
+          "dist/release/app/": "app/**",
+          "dist/release/vendor/": "vendor/**"
+        }
+      }
+    }
 
   });
-
   // The debug task will remove all contents inside the dist/ folder, lint
   // all your code, precompile all the underscore templates into
   // dist/debug/templates.js, compile all the application code into
   // dist/debug/require.js, and then concatenate the require/define shim
   // almond.js and dist/debug/templates.js into the require.js file.
-  grunt.registerTask("debug", "clean lint jst requirejs concat styles");
+  
+  //grunt.registerTask("debug", "clean lint jst requirejs concat styles");
+  
+  grunt.registerTask("debug", "clean lint handlebars requirejs concat styles");
+  grunt.registerTask("debug-without-clean", "lint requirejs concat styles");
 
   // The release task will run the debug tasks and then minify the
   // dist/debug/require.js file and CSS files.
   grunt.registerTask("release", "debug min mincss");
+  
+  
+  grunt.registerTask('default', ['uglify']);
+  
+  
 
 };

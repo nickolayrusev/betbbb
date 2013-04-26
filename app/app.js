@@ -13,14 +13,14 @@ function(LayoutManager) {
   // creation.
   var app = {
     // The root path to run the application.
-    root: "/betbbb/"
+    root: "/"
   };
 
   // Localize or create a new JavaScript Template object.
   var JST = window.JST = window.JST || {};
 
   // Configure LayoutManager with Backbone Boilerplate defaults.
-  LayoutManager.configure({
+  Backbone.Layout.configure({
     // Allow LayoutManager to augment Backbone.View.prototype.
     manage: true,
 
@@ -98,13 +98,15 @@ function(LayoutManager) {
 					async : false
 				}).then(function(contents) {
 					JST[path] = Handlebars.compile(contents);
-					JST[path].__compiled__ = true;
+					//JST[path].__compiled__ = true;
 				});
 			}
+			/*
 			if (!JST[path].__compiled__) {
-				JST[path] = Handlebars.template(JST[path]);
-				JST[path].__compiled__ = true;
-			}
+							JST[path] = Handlebars.template(JST[path]);
+							JST[path].__compiled__ = true;
+						}*/
+			
 			return JST[path];
 		}
 
