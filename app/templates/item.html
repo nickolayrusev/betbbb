@@ -1,4 +1,4 @@
-{{count}} . <label for="homeTeam{{cid}}">Home</label> <input id="homeTeam{{cid}}" type="text" class="-home" value="{{model.homeTeam}}" />
-<label for="visitorTeam{{cid}}">Visitor</label> <input id="visitorTeam{{cid}}" type="text" class="-visitor" value="{{model.visitorTeam}}" />
+{{count}} . <label for="homeTeam{{cid}}">Home</label> <input id="homeTeam{{cid}}" type="text" class="-home -typeahead" value="{{model.homeTeam}}" />
+<label for="visitorTeam{{cid}}">Visitor</label> <input id="visitorTeam{{cid}}" type="text" class="-visitor -typeahead" value="{{model.visitorTeam}}" />
 <label for="coef{{cid}}">Coef</label> <input id="coef{{cid}}" type="text" class="-coef" value="{{model.coef}}" />
 <input type="checkbox" id="iscorrect{{cid}}" class="-iscorrect" {{#if model.isCorrect}}  checked="checked"  {{/if}} />

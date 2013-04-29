@@ -41,12 +41,12 @@ function(app) {
 	// Default views
 	Team.Views.AppView = Backbone.View.extend({
 		template : "main-template",
-		className:"form-inline",
+		className : "form-inline",
 		initialize : function() {
 			this.collection = new Team.Collection();
 			this.config = new Team.ConfigCollection();
-			this.listenTo(this.collection, 'add', this.addOne);
-      		this.listenTo(this.collection, 'all', this.allEventsFromCollection);
+			this.listenTo(this.collection,'add',this.addOne);
+      		this.listenTo(this.collection,'all',this.allEventsFromCollection);
       		this.collection.fetch();
       		this.config.fetch();
 			if (this.config.length == 0) {
@@ -77,22 +77,20 @@ function(app) {
 			}
 		},
 		onModelChange : function(model,e){
-			console.log("on model change",model);
 			this.model.save();
 		},
 		removeAllChildViews : function(){
 			this.getView(function(view){
 				view.model.destroy();
-				view.remove();
+				//view.remove();
 			});
 		},
 		removeChildViews : function(views){
 			this.getView(function(view){
 				for(var i=0;i<views.length;i++){
 					if(views[i]==view.model.get("count")){
-						console.log("removing voew",view, "with model", view.model);
-						view.model.destroy();
-						view.remove();
+						view.model.destroy({success: function(model, response) {
+						}});
 					}
 				}
 			});
@@ -105,7 +103,6 @@ function(app) {
 			this.model.set({"totalStake":value,"stakeForColumn":stakeForColumn});
 		},
 		onBtnCalculateClick:function(){
-			console.log(this);
 			var arrayOfCombs = Team.k_combinations(this.collection,this.config.at(0).get("r"));
 			var sumOfCoefs = 0;
 			for(var i = 0; i<arrayOfCombs.length;i++){
@@ -124,22 +121,19 @@ function(app) {
 		},
 		
 		onbuttonclear : function(e) {
+			app.layout.removeView(".result");
 			this.removeAllChildViews();
 			this.model.set(this.model.defaults);
 			this.render();
 		},
 		allEventsFromCollection : function(e,m){
-			//console.log("collection event:",e," model:",m);
 		},
 		addOne: function(mod){
-			 //console.log('addOne event raised. Model is ',mod);
 			 var view = new Team.Views.Item({model: mod});
 			 this.insertView(view).render();
 		},
 		changed : function(e) {
 			//n=3,r=2
-			//this.removeChildViews();
-			console.log("app view",this);
 			if(e.target.value=="select-menu"){
 				return ;
 			}
@@ -149,18 +143,14 @@ function(app) {
 			var totalStake = this.$el.find("#totalStake").val();
 			this.$el.find("#stakeForColumn").val(totalStake/numberOfColumns);
 			if(n < this.model.get("n")){
-				console.log("smaller");
 				//remove n views and models
-				console.log("needs to deletes n views",this.model.get("n") - n);
 				var viewsToRemove = [];
 				for(var i=parseInt(n);i<this.model.get("n");i++){
 					viewsToRemove.push(i+1);
 				} 
-				console.log("views to remove",viewsToRemove);
 				this.removeChildViews(viewsToRemove);
 			}else{
 				//add more views and models
-				console.log("bigger","collection length",this.collection.size());
 				if(this.collection.size()==0){
 						for (var c = 0; c < n; c++) {
 							var itemModel = new Team.Model({count:c+1});
@@ -191,17 +181,22 @@ function(app) {
 	Team.Views.Item = Backbone.View.extend({
 		template : "item",
 		initialize : function() {
-			this.listenTo(this.model, 'change', this.onModelChanged);
-      		this.listenTo(this.model, 'destroy', this.remove);
+			this.listenTo(this.model,'change',this.onModelChanged);
+      		this.listenTo(this.model,'destroy',this.remove);
 		},
 		events : {
 			"change input.-home":"onHomeTeamChange",
 			"change input.-visitor":"onVisitorTeamChange",
+			"keypress input.-coef":"onKeyPressCoeff",
 			"change input.-coef":"onCoefChange",
 			"change input.-iscorrect":"isCorrect"
 		},
+		onKeyPressCoeff : function(e){
+			if (e.which!=46 && e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
+		       return false;
+		    }
+		},
 		onModelChanged : function(model){
-			//console.log("model is changed",this.model);
 			this.model.save();	
 		},
 		onHomeTeamChange: function(e){
@@ -222,7 +217,7 @@ function(app) {
 			allTeams = allTeams.concat(Team.ChampionShipTeams());
 			allTeams = allTeams.concat(Team.PrimeraDivisionTeams());
 			allTeams = allTeams.concat(Team.SeriaATeams());
-			this.$el.find("input[type=text]").typeahead({
+			this.$el.find("input.-typeahead").typeahead({
 				source : allTeams
 			});
 		},
