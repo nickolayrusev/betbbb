@@ -1,2 +1,3 @@
-betbbb test commit from https
+betbbb 
+betting calculations app
 ======
