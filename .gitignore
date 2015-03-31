@@ -3,4 +3,5 @@ dist/
 *.pyc
 *.pyo
 .svn
-_svn
+svn
+node_modules/
