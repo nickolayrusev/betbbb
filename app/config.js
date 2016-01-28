@@ -8,10 +8,10 @@ require.config({
   paths: {
     // Use the underscore build of Lo-Dash to minimize incompatibilities.
     "lodash": "../vendor/jam/lodash/lodash.underscore.min",
-
+    "jquery": "../vendor/jam/jquery/jquery",
     // Put additional paths here.
     // JavaScript folders.
-    // "plugins" : "../vendor/js/plugins",
+    "plugins" : "../vendor/js/plugins",
     "vendor": "../vendor",
     "handlebars": "../vendor/jam/handlebars/handlebars",
     "bootstrap":"../vendor/jam/bootstrap-amd/main",
