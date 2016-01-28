@@ -5,7 +5,7 @@ Simple betting calculations app that allowing you to calculate the stake and pro
 
 ##Features
 
-* Check winning amount if one or more matches
+* Check winning amount if one or more bets failed
 * Autocomplete for premiereship and championship teams
 * Calculate stake per column 
 
